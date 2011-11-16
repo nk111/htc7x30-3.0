@@ -48,8 +48,11 @@ obj-$(CONFIG_MACH_PRIMOC) += s5k4e5yx.o s5k4e5yx_reg_pro.o
 obj-$(CONFIG_MACH_KINGDOM) += s5k4e5yx.o s5k4e5yx_reg.o
 endif
 
-obj-$(CONFIG_S5K4E1GX) += s5k4e1gx.o s5k4e1gx_reg.o
-obj-$(CONFIG_MSM_V4L2_VIDEO_OVERLAY_DEVICE) += msm_v4l2_video.o
+#obj-$(CONFIG_S5K4E1GX) += s5k4e1gx.o s5k4e1gx_reg.o
+ifdef CONFIG_S5K6AAFX
+obj-$(CONFIG_MACH_FLYER) += s5k6aafx.o s5k6aafx_reg_flyer.o s5k6aafx_reg_flyer_cob.o
+obj-$(CONFIG_MACH_VIVO) += s5k6aafx.o s5k6aafx_reg_vivo.o
+endif
 
 ifdef CONFIG_CAMERA_ZSL
 	obj-$(CONFIG_ARCH_MSM8X60) += msm_io_8x60.o msm_vfe_8x60_ZSL.o msm_vpe1_8x60.o
@@ -90,7 +93,11 @@ else
     ifdef CONFIG_MACH_BLISSC
       obj-$(CONFIG_MT9V113) += mt9v113.o mt9v113_reg_lens_9251.o
     else
-      obj-$(CONFIG_MT9V113) += mt9v113.o mt9v113_reg.o
+      ifdef CONFIG_MACH_GLACIER
+        obj-$(CONFIG_MT9V113) += mt9v113.o mt9v113_reg_lens_9218.o
+      else
+        obj-$(CONFIG_MT9V113) += mt9v113.o mt9v113_reg_lens_9251.o
+      endif
     endif
   endif
   obj-$(CONFIG_VX6953) += vx6953.o vx6953_reg.o
