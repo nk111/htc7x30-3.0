@@ -2969,7 +2969,7 @@ static struct spi_board_info msm_spi_board_info[] __initdata = {
 
 static struct spi_board_info display_spi_board_info[] __initdata = {
 	{
-		.modalias       = "spi_display",
+		.modalias       = "spi_qsd",
 		.mode           = SPI_MODE_3,
 		.bus_num        = 0,
 		.chip_select    = 2,
