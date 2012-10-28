@@ -193,6 +193,13 @@ config S5K4E1GX
 	---help---
 	  Samsung 5M with Autofocus
 
+config S5K6AAFX
+	bool "Sensor s5k6aafx (Samsung 1.3M)"
+	depends on MSM_CAMERA
+	default n
+	---help---
+	  Samsung 1.3M without Autofocus
+
 config S5K3H1GX
        bool "Sensor s5k3h1gx"
        depends on MSM_CAMERA
@@ -242,14 +249,6 @@ config VB6801
 	depends on MSM_CAMERA && !ARCH_MSM8X60 && !MSM_CAMERA_V4L2
 	---help---
 	  5M with flash
-
-config MSM_V4L2_VIDEO_OVERLAY_DEVICE
-	tristate "Qualcomm MSM V4l2 video overlay device"
-	---help---
-	  Enables support for the MSM V4L2 video
-	  overlay driver. This allows video rendering
-	  apps to render overlaid video using Video4Linux2
-	  APIs, by using /dev/videoX device
 
 config MSM_CAMERA_FLASH
 	bool "Qualcomm MSM camera flash support"
