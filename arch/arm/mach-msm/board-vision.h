@@ -175,6 +175,7 @@ extern struct platform_device msm_device_mddi0;
 #define VISION_GPIO_PROXIMITY_EN	PMGPIO(20)
 #define VISION_TP_RSTz			PMGPIO(21)
 #define VISION_LED_3V3_EN		PMGPIO(22)
+#define VISION_SDMC_CD_N                PMGPIO(23)
 #define VISION_VOL_UP			PMGPIO(24)
 #define VISION_VOL_DN			PMGPIO(25)
 #define VISION_AUD_HP_DETz		PMGPIO(26)

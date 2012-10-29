@@ -1180,6 +1180,17 @@ static struct msm_ssbi_platform_data msm7x30_ssbi_pm8058_pdata __devinitdata = {
 };
 #endif
 
+static struct tps65200_platform_data tps65200_data = {
+        .gpio_chg_int = MSM_GPIO_TO_INT(PM8058_GPIO_PM_TO_SYS(VISION_GPIO_CHG_INT)),
+};
+
+static struct i2c_board_info i2c_tps_devices[] = {
+        {
+                I2C_BOARD_INFO("tps65200", 0xD4 >> 1),
+                .platform_data = &tps65200_data,
+        },
+};
+
 
 static int __init buses_init(void)
 {
@@ -1929,19 +1940,12 @@ static int msm_hsusb_ldo_set_voltage(int mV)
 #endif
 
 static int phy_init_seq[] = { 0x06, 0x36, 0x0C, 0x31, 0x31, 0x32, 0x1, 0x0D, 0x1, 0x10, -1 };
-static struct msm_hsusb_gadget_platform_data msm_gadget_pdata = {
-	.phy_init_seq		= phy_init_seq,
-	.is_phy_status_timer_on = 1,
-};
-
 static struct msm_otg_platform_data msm_otg_pdata = {
-#ifdef CONFIG_USB_EHCI_MSM_72K
-	.vbus_power = msm_hsusb_vbus_power,
-#endif
-	.pemp_level		= PRE_EMPHASIS_WITH_20_PERCENT,
-	.cdr_autoreset		= CDR_AUTO_RESET_DISABLE,
-	.drv_ampl		= HS_DRV_AMPLITUDE_DEFAULT,
-	.se1_gating		= SE1_GATING_DISABLE,
+        .phy_init_seq           = phy_init_seq,
+        .mode                   = USB_PERIPHERAL,
+        .otg_control            = OTG_PMIC_CONTROL,
+        .power_budget           = 750,
+        .phy_type               = CI_45NM_INTEGRATED_PHY,
 };
 
 static struct android_pmem_platform_data android_pmem_pdata = {
@@ -1988,6 +1992,129 @@ static struct platform_device android_pmem_audio_device = {
 	.dev = { .platform_data = &android_pmem_audio_pdata },
 };
 
+#if defined(CONFIG_CRYPTO_DEV_QCRYPTO) || \
+		defined(CONFIG_CRYPTO_DEV_QCRYPTO_MODULE) || \
+		defined(CONFIG_CRYPTO_DEV_QCEDEV) || \
+		defined(CONFIG_CRYPTO_DEV_QCEDEV_MODULE)
+
+#define QCE_SIZE		0x10000
+#define QCE_0_BASE		0xA8400000
+
+#define QCE_HW_KEY_SUPPORT	1
+#define QCE_SHA_HMAC_SUPPORT	0
+#define QCE_SHARE_CE_RESOURCE	0
+#define QCE_CE_SHARED		0
+
+static struct resource qcrypto_resources[] = {
+	[0] = {
+		.start = QCE_0_BASE,
+		.end = QCE_0_BASE + QCE_SIZE - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	[1] = {
+		.name = "crypto_channels",
+		.start = DMOV_CE_IN_CHAN,
+		.end = DMOV_CE_OUT_CHAN,
+		.flags = IORESOURCE_DMA,
+	},
+	[2] = {
+		.name = "crypto_crci_in",
+		.start = DMOV_CE_IN_CRCI,
+		.end = DMOV_CE_IN_CRCI,
+		.flags = IORESOURCE_DMA,
+	},
+	[3] = {
+		.name = "crypto_crci_out",
+		.start = DMOV_CE_OUT_CRCI,
+		.end = DMOV_CE_OUT_CRCI,
+		.flags = IORESOURCE_DMA,
+	},
+	[4] = {
+		.name = "crypto_crci_hash",
+		.start = DMOV_CE_HASH_CRCI,
+		.end = DMOV_CE_HASH_CRCI,
+		.flags = IORESOURCE_DMA,
+	},
+};
+
+static struct resource qcedev_resources[] = {
+	[0] = {
+		.start = QCE_0_BASE,
+		.end = QCE_0_BASE + QCE_SIZE - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	[1] = {
+		.name = "crypto_channels",
+		.start = DMOV_CE_IN_CHAN,
+		.end = DMOV_CE_OUT_CHAN,
+		.flags = IORESOURCE_DMA,
+	},
+	[2] = {
+		.name = "crypto_crci_in",
+		.start = DMOV_CE_IN_CRCI,
+		.end = DMOV_CE_IN_CRCI,
+		.flags = IORESOURCE_DMA,
+	},
+	[3] = {
+		.name = "crypto_crci_out",
+		.start = DMOV_CE_OUT_CRCI,
+		.end = DMOV_CE_OUT_CRCI,
+		.flags = IORESOURCE_DMA,
+	},
+	[4] = {
+		.name = "crypto_crci_hash",
+		.start = DMOV_CE_HASH_CRCI,
+		.end = DMOV_CE_HASH_CRCI,
+		.flags = IORESOURCE_DMA,
+	},
+};
+
+#endif
+
+#if defined(CONFIG_CRYPTO_DEV_QCRYPTO) || \
+		defined(CONFIG_CRYPTO_DEV_QCRYPTO_MODULE)
+
+static struct msm_ce_hw_support qcrypto_ce_hw_suppport = {
+	.ce_shared = QCE_CE_SHARED,
+	.shared_ce_resource = QCE_SHARE_CE_RESOURCE,
+	.hw_key_support = QCE_HW_KEY_SUPPORT,
+	.sha_hmac = QCE_SHA_HMAC_SUPPORT,
+};
+
+static struct platform_device qcrypto_device = {
+	.name		= "qcrypto",
+	.id		= 0,
+	.num_resources	= ARRAY_SIZE(qcrypto_resources),
+	.resource	= qcrypto_resources,
+	.dev		= {
+		.coherent_dma_mask = DMA_BIT_MASK(32),
+		.platform_data = &qcrypto_ce_hw_suppport,
+	},
+};
+#endif
+
+#if defined(CONFIG_CRYPTO_DEV_QCEDEV) || \
+		defined(CONFIG_CRYPTO_DEV_QCEDEV_MODULE)
+
+static struct msm_ce_hw_support qcedev_ce_hw_suppport = {
+	.ce_shared = QCE_CE_SHARED,
+	.shared_ce_resource = QCE_SHARE_CE_RESOURCE,
+	.hw_key_support = QCE_HW_KEY_SUPPORT,
+	.sha_hmac = QCE_SHA_HMAC_SUPPORT,
+};
+static struct platform_device qcedev_device = {
+	.name		= "qce",
+	.id		= 0,
+	.num_resources	= ARRAY_SIZE(qcedev_resources),
+	.resource	= qcedev_resources,
+	.dev		= {
+		.coherent_dma_mask = DMA_BIT_MASK(32),
+		.platform_data = &qcedev_ce_hw_suppport,
+	},
+};
+
+#endif
+
 static struct htc_battery_platform_data htc_battery_pdev_data = {
 	.guage_driver = GUAGE_MODEM,
 	.charger = SWITCH_CHARGER_TPS65200,
@@ -2001,19 +2128,6 @@ static struct platform_device htc_battery_pdev = {
 		.platform_data = &htc_battery_pdev_data,
 	},
 };
-
-#ifdef CONFIG_SUPPORT_DQ_BATTERY
-static int __init check_dq_setup(char *str)
-{
-	if (!strcmp(str, "PASS"))
-		tps65200_data.dq_result = 1;
-	else
-		tps65200_data.dq_result = 0;
-
-	return 1;
-}
-__setup("androidboot.dq=", check_dq_setup);
-#endif
 
 #ifdef CONFIG_SERIAL_MSM_HS
 static struct msm_serial_hs_platform_data msm_uart_dm1_pdata = {
@@ -2861,6 +2975,42 @@ static struct mmc_platform_data msm7x30_sdc3_data = {
 #endif
 
 #ifdef CONFIG_MMC_MSM_SDC4_SUPPORT
+#ifdef CONFIG_MMC_MSM_CARD_HW_DETECTION
+static unsigned int msm7x30_sdcc_slot_status(struct device *dev)
+{
+	return (unsigned int)
+		!gpio_get_value_cansleep(
+			PM8058_GPIO_PM_TO_SYS(VISION_SDMC_CD_N));
+}
+#endif
+#ifdef CONFIG_MMC_MSM_SDC4_WP_SUPPORT
+static int msm_sdcc_get_wpswitch(struct device *dv)
+{
+	void __iomem *wp_addr = 0;
+	uint32_t ret = 0;
+	struct platform_device *pdev;
+
+	if (!(machine_is_msm7x30_surf()))
+		return -1;
+	pdev = container_of(dv, struct platform_device, dev);
+
+	wp_addr = ioremap(FPGA_SDCC_STATUS, 4);
+	if (!wp_addr) {
+		pr_err("%s: Could not remap %x\n", __func__, FPGA_SDCC_STATUS);
+		return -ENOMEM;
+	}
+
+	ret = (((readl(wp_addr) >> 4) >> (pdev->id-1)) & 0x01);
+	pr_info("%s: WP Status for Slot %d = 0x%x \n", __func__,
+							pdev->id, ret);
+	iounmap(wp_addr);
+
+	return ret;
+}
+#endif
+#endif
+
+#ifdef CONFIG_MMC_MSM_SDC4_SUPPORT
 static unsigned int vision_sdc4_slot_type = MMC_TYPE_SD;
 static struct mmc_platform_data msm7x30_sdc4_data = {
 	.ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
@@ -2869,7 +3019,7 @@ static struct mmc_platform_data msm7x30_sdc4_data = {
 
 #ifdef CONFIG_MMC_MSM_CARD_HW_DETECTION
 	.status      = msm7x30_sdcc_slot_status,
-	.status_irq  = PM8058_GPIO_IRQ(PMIC8058_IRQ_BASE, VISION_GPIO_SDMC_CD_N),
+	.status_irq  = PM8058_GPIO_IRQ(PMIC8058_IRQ_BASE, VISION_SDMC_CD_N),
 	.irq_flags   = IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
 #endif
 
@@ -3013,11 +3163,7 @@ void vision_add_usb_devices(void)
 	printk(KERN_INFO "%s rev: %d\n", __func__, system_rev);
 	android_usb_pdata.products[0].product_id =
 			android_usb_pdata.product_id;
-	msm_device_gadget_peripheral.dev.platform_data = &msm_gadget_pdata;
-#if defined(CONFIG_USB_OTG)
-	msm_device_otg.dev.platform_data = &msm_otg_pdata;
-	platform_device_register(&msm_device_otg);
-#endif
+	msm_device_gadget_peripheral.dev.parent = &msm_device_otg.dev;
 	platform_device_register(&msm_device_gadget_peripheral);
 	platform_device_register(&android_usb_device);
 }
@@ -3050,6 +3196,7 @@ static struct platform_device *devices[] __initdata = {
 #endif
         &msm_device_smd,
         &msm_device_dmov,
+        &msm_device_otg,
         &qsd_device_spi,
 #ifdef CONFIG_MSM_SSBI
         &msm_device_ssbi_pmic1,
@@ -3083,7 +3230,6 @@ static struct platform_device *devices[] __initdata = {
 #ifdef CONFIG_S5K4E1GX
         &msm_camera_sensor_s5k4e1gx,
 #endif
-
         &msm_device_adspdec,
         &qup_device_i2c,
 #if defined(CONFIG_MARIMBA_CORE) && \
@@ -3105,17 +3251,15 @@ static struct platform_device *devices[] __initdata = {
 #ifdef CONFIG_MSM_SDIO_AL
         /* &msm_device_sdio_al, */
 #endif
-
 #if defined(CONFIG_CRYPTO_DEV_QCRYPTO) || \
-                defined(CONFIG_CRYPTO_DEV_QCRYPTO_MODULE)
-        &qcrypto_device,
+		defined(CONFIG_CRYPTO_DEV_QCRYPTO_MODULE)
+	&qcrypto_device,
 #endif
 
 #if defined(CONFIG_CRYPTO_DEV_QCEDEV) || \
-                defined(CONFIG_CRYPTO_DEV_QCEDEV_MODULE)
-        &qcedev_device,
+		defined(CONFIG_CRYPTO_DEV_QCEDEV_MODULE)
+	&qcedev_device,
 #endif
-
         &htc_battery_pdev,
         &msm_ebi0_thermal,
         &msm_ebi1_thermal,
@@ -3184,6 +3328,7 @@ static void __init vision_init(void)
 	msm_device_gadget_peripheral.dev.platform_data = &msm_gadget_pdata;
 #endif
 #endif
+        msm_device_otg.dev.platform_data = &msm_otg_pdata;
 
 #ifdef CONFIG_MSM_SSBI
 	msm_device_ssbi_pmic1.dev.platform_data =
@@ -3231,6 +3376,9 @@ static void __init vision_init(void)
 
 	i2c_register_board_info(2, msm_marimba_board_info,
 			ARRAY_SIZE(msm_marimba_board_info));
+
+        i2c_register_board_info(0, i2c_tps_devices,
+                        ARRAY_SIZE(i2c_tps_devices));
 
 	if (system_rev >= 1)
 		i2c_register_board_info(0, i2c_compass_devices2,
